@@ -58,7 +58,18 @@ The following is just my initial idea. The point is we want to see different res
     - conv in resnet in up_blocks
     - conv in resnet in mid_blocks
 3. Train \
-Modify try_LoRA.ipynb to apply LoRA on specific module. Print the model with LoRA to make sure you're doing right. \
+**Save every model and result!!!!! Use different directory to save them! That's very important!** \
+Modify try_LoRA.ipynb to apply LoRA on specific module. Print the model with LoRA to make sure you're doing right. Ask GPT to figure out how to apply LoRA on specific module(by their name). Modify target_modules\
+```python
+lora_config = LoraConfig(
+    r=lora_rank,
+    lora_alpha=lora_rank * 2,
+    target_modules=["to_q", "to_k", "to_v", "to_out.0"],
+    lora_dropout=0.0,
+    bias="none",
+)
+```
+
 I train it on my MacBook air M4 chips. I haven't known the best parameter. We just do some quick experiment for now.
 
 4.  Inference \
