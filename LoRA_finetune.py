@@ -17,10 +17,10 @@ model_id = "sd-legacy/stable-diffusion-v1-5"
 dataset_dir = "./vsr_sd_full"      
 lora_rank = 4
 train_steps = 2000
-learning_rate = 1e-5
+learning_rate = 1e-4
 batch_size = 1
 resolution = 512
-experiment_name = "sd_lora_bs1_lr1e_4_all_attn_2000"
+experiment_name = "sd_lora_bs1_lr1e_5_all_attn_2000"
 output_dir = f"./{experiment_name}" #MODIFY
 
 device = "mps" if torch.backends.mps.is_available() else "cuda"
@@ -151,12 +151,6 @@ wandb.init(
 )
 
 EVAL_PROMPTS = [
-    "a chicken on the left of a car",
-    "a person on the left of a cow",
-    "a horse on the right of a man",
-    "a man on side of a cat",
-    "a chicken near a book",
-    "a bicycle on the right of a girl",
     "a dog next to a phone",
     "a sheep next to a bicycle",
     "a pig on the bottom of a candle",
@@ -248,7 +242,7 @@ for epoch in range(100):  # loop until reaching steps
 
         if global_step % 50 == 0:
             print(f"Step {global_step} / {train_steps}, Loss = {loss.item():.4f}")
-        if global_step % 200 == 0:
+        if global_step % 50 == 0:
             pipe.unet.eval()
             with torch.no_grad():
                 save_samples(pipe, global_step)
