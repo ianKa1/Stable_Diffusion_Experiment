@@ -16,11 +16,11 @@ from peft import LoraConfig, get_peft_model
 model_id = "sd-legacy/stable-diffusion-v1-5"
 dataset_dir = "./vsr_sd_full"      
 lora_rank = 4
-train_steps = 2000
-learning_rate = 1e-4
+train_steps = 1000
+learning_rate = 1e-5
 batch_size = 1
 resolution = 512
-experiment_name = "sd_lora_bs1_lr1e_5_all_attn_2000"
+experiment_name = "sd_lora_bs1_lr1e_5_attn_resnet_2000_v2"
 output_dir = f"./{experiment_name}" #MODIFY
 
 device = "mps" if torch.backends.mps.is_available() else "cuda"
@@ -37,14 +37,15 @@ pipe = StableDiffusionPipeline.from_pretrained(
 pipe.to(device)
 
 lora_module_list = []
+lora_module_list = ['to_q','to_v','to_k','to_out.0']
 
 # MODIFY HERE
-# for name, module in pipe.unet.named_modules():
-#     if 'resnet' in name and 'up_blocks' in name and 'conv' in name and not 'conv_shortcut' in name:
-#         print(name)
-#         lora_module_list.append(name)
+for name, module in pipe.unet.named_modules():
+    if 'resnet' in name and 'conv' in name and not 'conv_shortcut' in name:
+        print(name)
+        lora_module_list.append(name)
 
-lora_module_list = ['to_q','to_v','to_k','to_out.0']
+
 print(lora_module_list)
 
 # Freeze base model
@@ -64,7 +65,19 @@ lora_config = LoraConfig(
 pipe.unet = get_peft_model(pipe.unet, lora_config)
 pipe.unet.print_trainable_parameters()
 
-print(pipe.unet)
+# pipe.text_encoder.requires_grad_(False)
+
+# lora_config_text_encoder = LoraConfig(
+#     r=lora_rank,
+#     lora_alpha=lora_rank * 2,
+#     target_modules=["q_proj", "k_proj", "v_proj"],
+#     lora_dropout=0.0,
+#     bias="none",
+# )
+
+# pipe.text_encoder = get_peft_model(text_encoder, lora_config)
+# pipe.text_encoder.print_trainable_parameters()
+# print(pipe.unet)
 
 # ============================================
 # 4. Dataset
@@ -242,14 +255,19 @@ for epoch in range(100):  # loop until reaching steps
 
         if global_step % 50 == 0:
             print(f"Step {global_step} / {train_steps}, Loss = {loss.item():.4f}")
-        if global_step % 50 == 0:
+        if global_step % 20 == 0:
             pipe.unet.eval()
             with torch.no_grad():
                 save_samples(pipe, global_step)
             pipe.unet.train()
 
-    if global_step >= train_steps:
-        break
+        if global_step % 200 == 0:
+            ckpt_dir = os.path.join(output_dir, f"checkpoint-{global_step}")
+            os.makedirs(ckpt_dir, exist_ok=True)
+            pipe.unet.save_pretrained(ckpt_dir)
+    
+        if global_step >= train_steps:
+            break
 
 
 # ============================================
