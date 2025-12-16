@@ -20,7 +20,7 @@ train_steps = 1000
 learning_rate = 1e-5
 batch_size = 1
 resolution = 512
-experiment_name = "sd_lora_bs1_lr1e_5_attn_resnet_2000_v2"
+experiment_name = "sd_lora_bs1_lr1e_5_attn_2000_v2"
 output_dir = f"./{experiment_name}" #MODIFY
 
 device = "mps" if torch.backends.mps.is_available() else "cuda"
@@ -40,10 +40,10 @@ lora_module_list = []
 lora_module_list = ['to_q','to_v','to_k','to_out.0']
 
 # MODIFY HERE
-for name, module in pipe.unet.named_modules():
-    if 'resnet' in name and 'conv' in name and not 'conv_shortcut' in name:
-        print(name)
-        lora_module_list.append(name)
+# for name, module in pipe.unet.named_modules():
+#     if 'resnet' in name and 'conv' in name and not 'conv_shortcut' in name:
+#         print(name)
+#         lora_module_list.append(name)
 
 
 print(lora_module_list)

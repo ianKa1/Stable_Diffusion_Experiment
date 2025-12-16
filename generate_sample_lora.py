@@ -2,11 +2,14 @@ import os
 import torch
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
-from diffusers import StableDiffusionPipeline, DDPMScheduler
+from diffusers import StableDiffusionPipeline, DDPMScheduler, DPMSolverMultistepScheduler
 from diffusers.optimization import get_scheduler
 from torchvision import transforms
 from peft import PeftModel, PeftConfig
 from diffusers import DDIMScheduler
+
+
+experiment_name = "sd_lora_bs1_lr1e_5_attn_2000_v2"
 
 model_id = "sd-legacy/stable-diffusion-v1-5"
 
@@ -15,12 +18,11 @@ print("Using device:", device)
 
 pipe = StableDiffusionPipeline.from_pretrained(
     model_id,
-    torch_dtype=torch.float32 if device == "mps" else torch.float16,
+    torch_dtype=torch.float32
 )
 
-pipe.unet = PeftModel.from_pretrained(pipe.unet, "sd_lora_bs1_lr1e_4_all_attn")
-pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
-
+pipe.unet = PeftModel.from_pretrained(pipe.unet, f"{experiment_name}/checkpoint-400")
+pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
 
 pipe.to(device)
 
@@ -37,8 +39,7 @@ if os.path.exists(file_path):
 else:
     print(f"File '{file_path}' not found.")
 
-
-output_dir = "./T2I-CompBench/examples/samples_lora_all_attn"
+output_dir = f"./T2I-CompBench/{experiment_name}/samples"
 os.makedirs(output_dir, exist_ok=True)
 count = 0
 
